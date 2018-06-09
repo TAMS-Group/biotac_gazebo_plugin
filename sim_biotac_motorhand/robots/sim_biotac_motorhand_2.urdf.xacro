@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<robot
+    xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+    xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+    xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+    xmlns:xacro="http://www.ros.org/wiki/xacro"
+    name="sim_biotac_motorhand_2">
+
+    <xacro:include filename="$(find sr_description)/hand/xacro/full_hand.urdf.xacro"/>
+    <xacro:include filename="$(find sr_description)/other/xacro/gazebo/gazebo.urdf.xacro"/>
+    <xacro:shadowhand muscletrans="false" muscle="false" bio="true" bt_sp="false" ubi="false" eli="false" reflect="1.0" prefix="rh_" lf="true"/>
+    
+    <link name="world"/>
+    <joint name="rh_world_joint" type="fixed">
+        <parent link="world"/>
+        <child link="rh_forearm"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    </joint>
+
+    <gazebo>
+        <plugin filename="libsim_biotac.so" name="sim_biotac">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>100.0</updateRate>
+        </plugin>
+    </gazebo>
+
+    <link name="ftcylinder">
+        <inertial>
+            <origin xyz="0 0 0"/>
+            <mass value="0.05"/>
+            <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001"/>
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <cylinder length="0.03" radius="0.002"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <cylinder length="0.03" radius="0.002"/>
+            </geometry>
+        </collision>
+    </link>
+    <gazebo reference="ftcylinder">
+        <material>Gazebo/Black</material>
+    </gazebo>
+    <joint name="ftcylinder_world" type="fixed">
+        <parent link="world"/>
+        <child link="ftcylinder"/>
+        <origin xyz="0.04 -0.0649 0.425" rpy="1.570796 0 0"/>
+    </joint>
+
+</robot>

@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<launch>
+    
+    <arg name="hand_id" default="rh"/>
+    <arg name="hand_trajectory" default="true"/>
+    <arg name="hand_serial" default="1322"/>
+
+    <arg name="gui" default="true"/>
+    <arg name="paused" value="true"/>
+
+    <arg name="debug" default="false"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sim_biotac_motorhand)/robots/ur5_sim_biotac_motorhand.urdf.xacro'"/>
+
+    <node name="$(anon sensor_model_loader)" pkg="sim_biotac" type="load_default" output="screen"/>
+
+    <param name="/hand/mapping/$(arg hand_serial)" value="$(arg hand_id)"/>
+    <param name="/hand/joint_prefix/$(arg hand_serial)" value="$(arg hand_id)_"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" default="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="verbose" default="True"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="world_name" value="$(find sim_biotac_motorhand)/worlds/grasp.world"/>
+    </include>
+
+    <node
+        name="spawn_model"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        args="-urdf -param robot_description -model hand -ros_namespace /gazebo
+       -J ra_shoulder_pan_joint -1.57
+       -J ra_shoulder_lift_joint -0.57
+       -J ra_elbow_joint 1.05
+       -J ra_wrist_1_joint -0.8
+       -J ra_wrist_2_joint 1.57
+       -J ra_wrist_3_joint -1.57
+       -J rh_THJ5 -0.5
+       -J rh_THJ4 1.8
+       -J rh_THJ2 0.8
+       -J rh_MFJ2 0.7
+       -J rh_MFJ3 0.5
+       -z 0.15 -unpause"
+        respawn="false"
+        output="screen"/>
+
+    <rosparam file="$(find sr_description)/hand/config/$(arg hand_id)_controller_gazebo.yaml" command="load"/>
+
+    <rosparam file="$(find sr_description)/hand/config/$(arg hand_id)_effort_controller_gazebo.yaml" command="load"/>
+
+    <rosparam file="$(find sr_robot_launch)/config/gazebo/controller/ra_trajectory_controller.yaml" command="load"/>
+
+    <node name="arm_trajectory_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="--shutdown-timeout=1.0 ra_trajectory_controller"/>
+
+    <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch"/>
+    <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher_full_pos">
+        <param name="publish_frequency" type="double" value="20.0"/>
+    </node>
+
+    <rosparam file="$(find sr_multi_moveit_config)/config/robot_configs/right_sh_ur5.yaml"/>
+    <node name="srdf_generator" pkg="sr_multi_moveit_config" type="generate_load_moveit_config.py"/>
+
+    <include file="$(find sr_multi_moveit_config)/launch/moveit_planning_and_execution.launch">
+        <arg name="load_robot_description" value="true"/>
+        <arg name="gui" default="false"/>
+        <arg name="robot_config_file" value="$(find sr_multi_moveit_config)/config/robot_configs/right_sh_ur5.yaml"/>
+        <arg name="planning" value="ompl"/>
+        <arg name="generate_planning_config" value="true"/>
+    </include>
+
+    <node name="teach_mode_node" pkg="sr_robot_launch" type="teach_mode_node" output="screen"/>
+
+    <node name="rh_trajectory_controller" pkg="sr_utilities" type="trajectory_controller_spawner.py" output="screen">
+        <param name="hand_trajectory" value="$(arg hand_trajectory)"/>
+        <param name="exclude_wrist" value="true"/>
+    </node>
+
+</launch>

@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+# generates random finger movements
+
+import random
+import rospy
+from std_msgs.msg import Float64, String
+from controller_manager_msgs.srv import UnloadController, SwitchController, ListControllers
+import dynamic_reconfigure.client
+
+rospy.init_node("move_finger")
+
+ffj0_pid = dynamic_reconfigure.client.Client("/sh_rh_ffj0_position_controller/pid")
+ffj3_pid = dynamic_reconfigure.client.Client("/sh_rh_ffj3_position_controller/pid")
+ffj4_pid = dynamic_reconfigure.client.Client("/sh_rh_ffj4_position_controller/pid")
+wrj1_pid = dynamic_reconfigure.client.Client("/sh_rh_wrj1_position_controller/pid")
+wrj2_pid = dynamic_reconfigure.client.Client("/sh_rh_wrj2_position_controller/pid")
+
+ffj0 = rospy.Publisher("/sh_rh_ffj0_position_controller/command", Float64, queue_size=1)
+ffj3 = rospy.Publisher("/sh_rh_ffj3_position_controller/command", Float64, queue_size=1)
+ffj4 = rospy.Publisher("/sh_rh_ffj4_position_controller/command", Float64, queue_size=1)
+
+rospy.wait_for_service("controller_manager/list_controllers")
+
+switch_controller = rospy.ServiceProxy('controller_manager/switch_controller', SwitchController)
+unload_controller = rospy.ServiceProxy('controller_manager/unload_controller', UnloadController)
+list_controllers = rospy.ServiceProxy('controller_manager/list_controllers', ListControllers)
+
+while True:
+
+    # disable trajectory controller
+    if "rh_trajectory_controller" in [c.name for c in list_controllers().controller]:
+        print "unloading trajectory controller"
+        switch_controller([], ["rh_trajectory_controller"], 1)
+        unload_controller("rh_trajectory_controller")
+        rospy.sleep(1.0)
+        continue
+
+    print "moving finger"
+
+    # reconfigure position controllers
+    ffj0_pid.update_configuration({"i":0.0,"d":0.0})
+    ffj3_pid.update_configuration({"i":0.0,"d":0.0})
+    ffj4_pid.update_configuration({"i":0.0,"d":0.0})
+    wrj1_pid.update_configuration({"i":0.0,"d":0.0})
+    wrj2_pid.update_configuration({"i":0.0,"d":0.0})
+
+    # send random joint angles
+    ffj0.publish(random.random() * 1.0)
+    ffj3.publish(random.random() * 1.0)
+    ffj4.publish(random.random() * -0.5)
+
+    # wait
+    rospy.sleep(random.random() * 0.8)

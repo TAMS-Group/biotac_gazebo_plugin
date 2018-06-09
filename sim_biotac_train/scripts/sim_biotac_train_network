@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+
+import numpy as np
+import csv
+import os
+import sys
+import logging
+import keras
+import cv2
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import *
+from keras.optimizers import *
+from keras.callbacks import *
+from os.path import basename
+import yaml
+from keras.utils import plot_model
+import keras
+from keras.models import Model
+import keras.backend as K
+import random
+import base64
+
+logging.getLogger().setLevel(logging.INFO)
+
+sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+
+reader = csv.reader(open(sys.argv[1]))
+rows = [row for row in reader]
+
+data_columns = [7, 8, 9, 10] + range(12, 31)
+
+headers_out = np.array(rows[0])[data_columns].tolist()
+
+rows = rows[1:]
+data = np.array(rows).astype(float)
+
+data_in = np.hstack((
+    data[:,1:4],
+    data[:,4:7],
+    np.roll(data[:,4:7], -10, axis=0),
+    np.roll(data[:,4:7], +10, axis=0),
+    data[:,11:12],
+))
+
+data_out = data[:,data_columns]
+
+center_in = np.mean(data_in, axis=0, keepdims=True);
+center_out = np.mean(data_out, axis=0, keepdims=True)
+
+data_in = data_in - center_in
+data_out = data_out - center_out
+
+scale_in = np.std(data_in, axis=0, keepdims=True)
+scale_out = np.std(data_out, axis=0, keepdims=True)
+
+data_in = data_in / scale_in
+data_out = data_out / scale_out
+
+headers_in = [
+    "px", "py", "pz",
+    "fx", "fy", "fz", "fx1", "fy1", "fz1", "fx2", "fy2", "fz2",
+    "t",
+    ]
+
+in_cols = data_in.shape[1]
+
+out_cols = data_out.shape[1]
+
+model = Sequential()
+
+def Selector(indices, input_shape):
+    weights = np.zeros((input_shape[0], len(indices)))
+    for i in range(len(indices)):
+        weights[indices[i], i] = 1
+    weights = np.array([weights])
+    layer = Dense(len(indices), input_shape=input_shape, use_bias=False, weights=weights, trainable=False, activation="linear")
+    return layer
+
+_input = Input(shape=(in_cols,), name="Input")
+
+_area = Selector(range(0, 3), input_shape=(in_cols,))(_input)
+_area = Dense(512, activation="relu")(_area)
+_area = Dense(512, activation="relu")(_area)
+_area = Dense(512, activation="relu")(_area)
+_area = Dense(64, activation="linear")(_area)
+
+_force = Selector(range(3, 12), input_shape=(in_cols,))(_input)
+_force = Dense(256, activation="relu", bias_regularizer=regularizers.l1(0.0015))(_force)
+_force = Dense(256, activation="relu", bias_regularizer=regularizers.l1(0.0015))(_force)
+_force = Dense(256, activation="relu", bias_regularizer=regularizers.l1(0.0015))(_force)
+_force = Dense(64, activation="linear", bias_regularizer=regularizers.l1(0.0010))(_force)
+
+_activations = Multiply()([_force, _area])
+_activations = Dense(256, activation="relu")(_activations)
+_activations = Dense(256, activation="relu")(_activations)
+_activations = Dense(out_cols, activation="linear")(_activations)
+
+_temperature = Selector(range(12, 13), input_shape=(in_cols,))(_input)
+_temperature = Dense(256, activation="sigmoid")(_temperature)
+_temperature = Dense(out_cols, activation="linear")(_temperature)
+
+_l = Add()([_temperature, _activations])
+
+model = Model(inputs=_input, outputs=_l)
+
+def loss(y_true, y_pred):
+    err = y_pred - y_true
+    err = K.abs(err) + K.square(err)
+    return K.mean(err)
+
+model.compile(loss=loss, optimizer=Adam(lr=0.00005, beta_1=0.97))
+
+model.fit(
+    data_in,
+    data_out,
+    shuffle=True,
+    epochs=50,
+    batch_size=1024,
+    )
+
+print "serializing network"
+data = {}
+data["layers"] = yaml.load(model.to_yaml())["config"]
+def encodeweights(l):
+    if len(l.shape) == 1:
+        return base64.b64encode(l.tobytes())
+    if len(l.shape) > 1:
+        return [encodeweights(a) for a in l]
+data["weights"] = [[encodeweights(weightarray) for weightarray in layer.get_weights()] for layer in model.layers]
+data["normalization"] = { }
+data["normalization"]["input"] = { }
+data["normalization"]["output"] = { }
+data["normalization"]["input"]["center"] = center_in[0].tolist()
+data["normalization"]["output"]["center"] = center_out[0].tolist()
+data["normalization"]["input"]["scale"] = scale_in[0].tolist()
+data["normalization"]["output"]["scale"] = scale_out[0].tolist()
+yaml.dump(data, open(sys.argv[1] + ".model.yaml", "w"))
