@@ -14,3 +14,7 @@
 ## Running the demos
 - Launch a simulation environment (eg. `roslaunch sim_biotac_motorhand sim_biotac_motorhand_1.launch`, or `roslaunch sim_biotac_motorhand sim_biotac_motorhand_2.launch`, or `roslaunch sim_biotac_motorhand ur5_motorhand.launch`)
 - Run one of the tests (eg. `rosrun sim_biotac_motorhand move_finger_1`, or `rosrun sim_biotac_motorhand move_finger_2`, or `rosrun sim_biotac_motorhand tripod_grasp`)
+
+## References
+- You can download the dataset associated with this network model at https://tams.informatik.uni-hamburg.de/research/datasets/index.php#biotac_single_contact_response
+- If you use this work, please cite *Philipp Ruppel, Yannick Jonetzko, Michael Görner, Norman Hendrich and Jianwei Zhang, Simulation of the SynTouch BioTac Sensor, The 15th International Conference on Intelligent Autonomous Systems, IAS-15 2018, Baden Baden, Germany.*
