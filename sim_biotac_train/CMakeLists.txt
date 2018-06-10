@@ -57,7 +57,6 @@ catkin_package(
     sim_biotac
 
     DEPENDS
-    SDF
     EIGEN3
 )
 
