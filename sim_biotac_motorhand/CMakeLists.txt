@@ -24,6 +24,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(three_pod_grasp src/three_pod_grasp.cpp)
-add_dependencies(three_pod_grasp ${catkin_EXPORTED_TARGETS})
-target_link_libraries(three_pod_grasp ${catkin_LIBRARIES})
+add_executable(tripod_grasp src/tripod_grasp.cpp)
+add_dependencies(tripod_grasp ${catkin_EXPORTED_TARGETS})
+target_link_libraries(tripod_grasp ${catkin_LIBRARIES})

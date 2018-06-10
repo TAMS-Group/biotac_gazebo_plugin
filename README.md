@@ -13,4 +13,4 @@
 
 ## Running the demos
 - Launch a simulation environment (eg. `roslaunch sim_biotac_motorhand sim_biotac_motorhand_1.launch`, or `roslaunch sim_biotac_motorhand sim_biotac_motorhand_2.launch`, or `roslaunch sim_biotac_motorhand ur5_motorhand.launch`)
-- Run one of the tests (eg. `rosrun sim_biotac_motorhand move_finger_1`, or `rosrun sim_biotac_motorhand move_finger_2`, or `rosrun sim_biotac_motorhand three_pod_grasp`)
+- Run one of the tests (eg. `rosrun sim_biotac_motorhand move_finger_1`, or `rosrun sim_biotac_motorhand move_finger_2`, or `rosrun sim_biotac_motorhand tripod_grasp`)
