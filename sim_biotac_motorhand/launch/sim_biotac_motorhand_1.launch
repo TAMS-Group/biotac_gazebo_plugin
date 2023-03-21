@@ -10,7 +10,11 @@
 
     <arg name="debug" default="false"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sim_biotac_motorhand)/robots/sim_biotac_motorhand.urdf.xacro'"/>
+<!--    <param name="robot_description" command="$(find xacro)/xacro '$(find sim_biotac_motorhand)/robots/sim_biotac_motorhand_1.urdf.xacro'"/>-->
+    
+    <param name="robot_description" command="$(find xacro)/xacro '$(find sr_description)/robots/sr_hand.urdf.xacro'"/>
+    
+    
 
     <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" output="screen" args="-f world -d $(find sim_biotac_motorhand)/launch/touch.rviz"/>
 

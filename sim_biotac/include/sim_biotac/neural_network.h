@@ -6,7 +6,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <xmlrpcpp/base64.h>
+//#include <xmlrpcpp/base64.h>
+#include <b64/cencode.h>
+#include <b64/cdecode.h>
 #include <yaml-cpp/yaml.h>
 
 class NeuralNetwork {

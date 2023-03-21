@@ -10,7 +10,7 @@
 
     <arg name="debug" default="false"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find sim_biotac_motorhand)/robots/ur5_sim_biotac_motorhand.urdf.xacro'"/>
+    <param name="robot_description" command="$(find xacro)/xacro '$(find sim_biotac_motorhand)/robots/ur5_sim_biotac_motorhand.urdf.xacro'"/>
 
     <node name="$(anon sensor_model_loader)" pkg="sim_biotac" type="load_default" output="screen"/>
 
