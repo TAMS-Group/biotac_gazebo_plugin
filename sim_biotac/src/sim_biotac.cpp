@@ -6,6 +6,8 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 
+#include <ignition/math/Vector3.hh>
+
 #include <deque>
 #include <fstream>
 #include <geometry_msgs/Vector3.h>
@@ -24,10 +26,10 @@ namespace gazebo {
 
 class SimBiotacPlugin : public ModelPlugin {
 
-    static Eigen::Vector3d toEigen(const math::Vector3 &v) { return Eigen::Vector3d(v.x, v.y, v.z); }
-    static Eigen::Affine3d toEigen(const math::Pose &p) {
+    static Eigen::Vector3d toEigen(const ignition::math::Vector3d &v) { return Eigen::Vector3d(v.X(), v.Y(), v.Z()); }
+    static Eigen::Affine3d toEigen(const ignition::math::Pose3d &p) {
         Eigen::Affine3d affine;
-        affine.fromPositionOrientationScale(toEigen(p.pos), Eigen::Quaterniond(p.rot.w, p.rot.x, p.rot.y, p.rot.z), Eigen::Vector3d(1, 1, 1));
+        affine.fromPositionOrientationScale(toEigen(p.Pos()), Eigen::Quaterniond(p.Rot().W(), p.Rot().X(), p.Rot().Y(), p.Rot().Z()), Eigen::Vector3d(1, 1, 1));
         return affine;
     }
     static Eigen::Vector3d toEigen(const msgs::Vector3d &v) { return Eigen::Vector3d(v.x(), v.y(), v.z()); }
@@ -76,11 +78,11 @@ public:
 
         physics::WorldPtr world = model->GetWorld();
         if(!world) return;
-        if(!world->GetPhysicsEngine()) return;
-        if(!world->GetPhysicsEngine()->GetContactManager()) return;
+        if(!world->Physics()) return;
+        if(!world->Physics()->GetContactManager()) return;
 
         bool publishStep = true;
-        auto currentTime = world->GetSimTime();
+        auto currentTime = world->SimTime();
 
         if((currentTime - lastUpdateTime0).Double() < 0.001) {
             return;
@@ -96,11 +98,11 @@ public:
 
         if(!model) return;
 
-        physics::ContactManager *contactManager = world->GetPhysicsEngine()->GetContactManager();
+        physics::ContactManager *contactManager = world->Physics()->GetContactManager();
         if(!contactManager) return;
 
         if(!model) return;
-        auto modelPose = toEigen(model->GetWorldPose());
+//        auto modelPose = toEigen(model->GetWorldPose());
 
         std::vector<std::vector<Touch>> fingerTouches(fingerLinkNames.size());
 
@@ -114,7 +116,7 @@ public:
                         if(fingerLinkName == contact->collision1->GetLink()->GetName()) force = toEigen(contact->wrench[pointIndex].body1Force);
                         if(fingerLinkName == contact->collision2->GetLink()->GetName()) force = toEigen(contact->wrench[pointIndex].body2Force);
                         Touch touch;
-                        touch.point = fingerToSensorTransforms[fingerIndex].inverse() * toEigen(model->GetLink(fingerLinkName)->GetWorldPose()).inverse() * toEigen(contact->positions[pointIndex]);
+                        touch.point = fingerToSensorTransforms[fingerIndex].inverse() * toEigen(model->GetLink(fingerLinkName)->WorldPose()).inverse() * toEigen(contact->positions[pointIndex]);
                         touch.force = fingerToSensorTransforms[fingerIndex].inverse().rotation() * -force;
                         fingerTouches[fingerIndex].push_back(touch);
                     }
@@ -204,7 +206,7 @@ public:
                 // ROS_INFO("collision %s", coll->GetName().c_str());
             }
         }
-        physics::ContactManager *contactManager = model->GetWorld()->GetPhysicsEngine()->GetContactManager();
+        physics::ContactManager *contactManager = model->GetWorld()->Physics()->GetContactManager();
         std::string topic = contactManager->CreateFilter("gazebo_ros_touch", collisions);
     }
 };
