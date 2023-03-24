@@ -7,8 +7,10 @@
 #include <unordered_map>
 #include <vector>
 //#include <xmlrpcpp/base64.h>
-#include <b64/cencode.h>
-#include <b64/cdecode.h>
+//replace xmlrpcpp with libb64
+#include <b64/encode.h>
+#include <b64/decode.h>
+
 #include <yaml-cpp/yaml.h>
 
 class NeuralNetwork {
@@ -22,13 +24,19 @@ class NeuralNetwork {
         return vector;
     }
 
-    base64<char> b46;
+    //base64<char> b46;
+    base64::decoder E;
+
     Eigen::VectorXf yamlToWeightVector(const YAML::Node &yaml) {
         Eigen::VectorXf vector;
         auto text = yaml.as<std::string>();
-        std::string data;
-        int i = 0;
-        b46.get(text.begin(), text.end(), std::back_insert_iterator<std::string>(data), i);
+        char* plaintext_out;
+        //int i = 0;
+        //b46.get(text.begin(), text.end(), std::back_insert_iterator<std::string>(data), i);
+        int plainlength;
+        plainlength = E.decode(text.c_str(), text.size(), plaintext_out);
+        std::string data(plaintext_out);
+
         if(data.size() != data.size() / 4 * 4) {
             throw 0;
         }
