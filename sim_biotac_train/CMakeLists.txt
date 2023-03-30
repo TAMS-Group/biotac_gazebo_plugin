@@ -16,14 +16,17 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     sensor_msgs
     eigen_conversions
-    apriltags
     rosbag
     kdl_conversions
     sr_robot_msgs
     sim_biotac
+    apriltags
+    apriltags_ros
 )
 
 find_package(Eigen3 REQUIRED)
+
+# find_package(apriltag EXACT REQUIRED PATHS /usr/local/share/apriltag)
 
 include_directories(include
     ${Boost_INCLUDE_DIRS}
@@ -40,6 +43,10 @@ if (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+# Extract the include directories and libraries from apriltag::apriltag as catkin_package() does not support modern cmake.
+# get_target_property(apriltag_INCLUDE_DIRS apriltag::apriltag INTERFACE_INCLUDE_DIRECTORIES)
+# get_target_property(apriltag_LIBRARIES apriltag::apriltag INTERFACE_LINK_LIBRARIES)
+
 catkin_package(
     INCLUDE_DIRS
 
@@ -50,14 +57,16 @@ catkin_package(
     geometry_msgs
     sensor_msgs
     eigen_conversions
-    apriltags
     rosbag
     kdl_conversions
     sr_robot_msgs
     sim_biotac
+    apriltags_ros
+    apriltags
 
     DEPENDS
     EIGEN3
+    
 )
 
 add_executable(sim_biotac_train_adjust src/sim_biotac_train_adjust.cpp)

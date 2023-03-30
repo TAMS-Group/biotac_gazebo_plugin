@@ -41,7 +41,8 @@
 
     
     <!--robot description-->
-    <arg name="robot_description" value="'$(find sim_biotac_motorhand)/robots/sim_biotac_motorhand_1.urdf.xacro'"/>
+   <arg name="robot_description" value="'$(find sim_biotac_motorhand)/robots/sim_biotac_motorhand_1.urdf.xacro'"/>
+<!--         <arg name="robot_description" value="'$(find sr_description)/robots/sr_hand.urdf.xacro'"/> -->
     <arg name="load_robot_description_command" value="$(find xacro)/xacro $(arg robot_description)
                                  hand_type:=$(arg hand_type) hand_version:=$(arg hand_version) side:=$(arg side)
                                  fingers:=$(arg fingers) tip_sensors:=$(arg tip_sensors)

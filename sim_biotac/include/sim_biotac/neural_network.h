@@ -27,21 +27,59 @@ class NeuralNetwork {
     //base64<char> b46;
     base64::decoder E;
 
-    Eigen::VectorXf yamlToWeightVector(const YAML::Node &yaml) {
+//    Eigen::VectorXf yamlToWeightVector(const YAML::Node &yaml) {
+//        Eigen::VectorXf vector;
+//        ROS_INFO_STREAM("before as................................................................ ");
+//        ROS_INFO_STREAM("yaml content "<<yaml);
+//        const std::string text = yaml.as<std::string>();
+//        ROS_INFO_STREAM("yaml content2 "<<yaml);
+//        char* plaintext_out = new char[10000];
+//        ROS_INFO_STREAM("input text "<<text<<" and text size is "<<text.size());
+//        //int i = 0;
+//        //b46.get(text.begin(), text.end(), std::back_insert_iterator<std::string>(data), i);
+//        int plainlength;
+//        plainlength = E.decode(text.c_str(), text.size(), plaintext_out);
+
+//        ROS_INFO_STREAM( "length of weight : " << plainlength);
+//        for(int i = 0; i < plainlength; i++)
+//            ROS_INFO_STREAM( "convert data is : " <<i<<" , "<< (int)*(plaintext_out + i));
+//        std::string data;
+//        data  = plaintext_out;
+
+//        ROS_INFO_STREAM( "updated ..................data and size are : " <<data<<" , "<<data.size());
+
+//        if(data.size() != data.size() / 4 * 4) {
+//            throw 0;
+//        }
+//        vector.resize(data.size() / 4);
+//        memcpy(vector.data(), data.data(), data.size());
+//        delete [] plaintext_out;
+//        return vector;
+//    }
+
+    Eigen::VectorXf yamlToWeightVector(const std::string text) {
         Eigen::VectorXf vector;
-        auto text = yaml.as<std::string>();
-        char* plaintext_out;
-        //int i = 0;
-        //b46.get(text.begin(), text.end(), std::back_insert_iterator<std::string>(data), i);
+        char* plaintext_out = new char[10000];
         int plainlength;
+//        std::string data = "";
         plainlength = E.decode(text.c_str(), text.size(), plaintext_out);
-        std::string data(plaintext_out);
+
+//        ROS_INFO_STREAM( "length of weight : " << plainlength);
+//        for(int i = 0; i < plainlength; i++){
+//            ROS_INFO_STREAM( "convert data is : " <<i<<" , "<< (int)*(plaintext_out + i));
+//            data = data + plaintext_out[i];
+//        }
+
+        std::string data(reinterpret_cast<const char*>(plaintext_out), sizeof(plaintext_out)/sizeof(plaintext_out[0]));
+
+//        ROS_INFO_STREAM( "updated ..................data and size are : " <<data<<" , "<<data.size());
 
         if(data.size() != data.size() / 4 * 4) {
             throw 0;
         }
         vector.resize(data.size() / 4);
         memcpy(vector.data(), data.data(), data.size());
+        delete [] plaintext_out;
         return vector;
     }
 
@@ -78,6 +116,7 @@ public:
             YAML::Node yamlLayer = yaml["layers"]["layers"][layerIndex];
             std::string layerType = yamlLayer["class_name"].as<std::string>();
             std::shared_ptr<Layer> layer;
+            ROS_INFO_STREAM("layerCount is "<<layerCount<<" and current layerIndex is "<<layerIndex <<"layer type is "<<layerType);
             if(layerType == "InputLayer") {
                 struct Input : Layer {};
                 layer = std::make_shared<Input>();
@@ -143,25 +182,48 @@ public:
                 ROS_FATAL("unknown layer type %s", layerType.c_str());
                 throw 0;
             }
-            auto yamlWeights = yaml["weights"][layerIndex];
+            YAML::Node yamlWeights = yaml["weights"][layerIndex];
             std::vector<Eigen::MatrixXf> layerWeights;
+            std::string full_weight_txt,single_col_weight_txt,cur_col_weight_txt;
+
             for(size_t i = 0; i < yamlWeights.size(); i++) {
+//                ROS_INFO_STREAM("yamlWeights.size() is "<<yamlWeights.size());
                 try {
-                    layerWeights.push_back(yamlToWeightVector(yamlWeights[i]));
+//                    ROS_INFO_STREAM("before full text print");
+                    full_weight_txt = yamlWeights[i].as<std::string>();
+//                    ROS_INFO_STREAM("full text "<<full_weight_txt);
+                    Eigen::MatrixXf full_weight_mat = yamlToWeightVector(full_weight_txt);
+                    layerWeights.push_back(full_weight_mat);
+
+//                    layerWeights.push_back(yamlToWeightVector(yamlWeights[i]));
                     continue;
                 } catch(const YAML::BadConversion &e) {
+//                    ROS_INFO_STREAM("bad convert..........................");
                 }
-                Eigen::MatrixXf weights(yamlWeights[i].size(), yamlToWeightVector(yamlWeights[i][0]).size());
+//                ROS_INFO_STREAM("yamlWeights[i].size() "<<yamlWeights[i].size());
+//                ROS_INFO_STREAM("yamlWeights[i][0] "<<yamlWeights[i][0]);
+                single_col_weight_txt = yamlWeights[i][0].as<std::string>();
+
+                Eigen::VectorXf single_weight_vec = yamlToWeightVector(single_col_weight_txt);
+//                ROS_INFO_STREAM("vec size is "<<single_weight_vec.size());
+                Eigen::MatrixXf weights(yamlWeights[i].size(), single_weight_vec.size());
+
+//                Eigen::MatrixXf weights(yamlWeights[i].size(), yamlToWeightVector(yamlWeights[i][0]).size());
                 for(size_t row = 0; row < weights.rows(); row++) {
-                    auto r = yamlToWeightVector(yamlWeights[i][row]);
+                    cur_col_weight_txt = yamlWeights[i][row].as<std::string>();
+//                    ROS_INFO_STREAM("cur_col_weight_txt is "<<cur_col_weight_txt);
+                    auto r = yamlToWeightVector(cur_col_weight_txt);
                     if(r.size() != weights.row(row).size()) {
                         ROS_INFO("%i %i", (int)r.size(), (int)weights.cols());
                         throw 0;
                     }
+                    ROS_INFO_STREAM("row is "<<r);
                     weights.row(row) = r;
                 }
                 layerWeights.push_back(weights.transpose());
             }
+            ROS_INFO("weight value is loaded successfully");
+
             layer->weights = layerWeights;
             for(size_t i = 0; i < yamlLayer["inbound_nodes"][0].size(); i++) {
                 layer->inputNames.push_back(yamlLayer["inbound_nodes"][0][i][0].as<std::string>());
@@ -170,6 +232,7 @@ public:
             layerMap[layer->name] = layer;
             layerList.push_back(layer);
         }
+        ROS_INFO("loading data finished.................................");
         for(auto layer : layerList) {
             for(auto n : layer->inputNames) {
                 layer->inputLayers.push_back(layerMap[n]);

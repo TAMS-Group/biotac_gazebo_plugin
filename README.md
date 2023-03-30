@@ -10,6 +10,7 @@
 - Clone this reposity
 - If you want to run the demos: get the Shadow hand packages and their dependencies
 - If you want to train the plug-in yourself instead of using a pretrained model, get Keras, Tensorflow, Apriltags, and the Shadow hand packages
+- depends on the apriltags and apriltags_ros which can be check out from https://github.com/RIVeR-Lab/apriltags_ros.git. Now the new version which is updated and named as apriltag_ros (https://github.com/AprilRobotics/apriltag_ros.git) and apriltag (https://github.com/AprilRobotics/apriltag.git). However lots of coding interfaces are changed, the interface in our package in sim_biotac_train is not updated to compatible with new apriltag_ros and apriltag yet (Todo).
 
 ## Running the demos
 - Launch a simulation environment (eg. `roslaunch sim_biotac_motorhand sim_biotac_motorhand_1.launch`, or `roslaunch sim_biotac_motorhand sim_biotac_motorhand_2.launch`, or `roslaunch sim_biotac_motorhand ur5_motorhand.launch`)
