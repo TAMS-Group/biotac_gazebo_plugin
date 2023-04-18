@@ -25,8 +25,9 @@ Eigen::Affine3d makeTransform(double px, double py, double pz, double rx, double
 }
 
 // The names of the finger links that the collision models are attached to
+//lh is hardcoded in this stage will be adaptive in future.
 std::vector<std::string> fingerLinkNames = {
-    "rh_ffmiddle", "rh_mfmiddle", "rh_rfmiddle", "rh_lfmiddle", "rh_thmiddle",
+    "lh_ffmiddle", "lh_mfmiddle", "lh_rfmiddle", "lh_lfmiddle", "lh_thmiddle",
 };
 
 // Transforms from the biotac sensors to the finger links

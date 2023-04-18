@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<!--<?xml version="1.0"?>
 <robot
     xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
     xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
@@ -13,6 +13,47 @@
     <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
 
     <xacro:ur5_robot prefix="ra_" joint_limited="false"/>
+
+    <link name="world"/>
+
+    <joint name="world_joint" type="fixed">
+        <parent link="world"/>
+        <child link="ra_base_link"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    </joint>
+
+    <joint name="arm_to_hand" type="fixed">
+        <parent link="ra_ee_link"/>
+        <child link="rh_forearm"/>
+        <origin xyz="0.012 0.0 0.0" rpy="${pi/2.0} ${0.0} ${pi/2.0}"/>
+    </joint>
+
+    <gazebo>
+        <plugin filename="libsim_biotac.so" name="sim_biotac">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>100.0</updateRate>
+        </plugin>
+    </gazebo>
+
+</robot>-->
+
+<?xml version="1.0"?>
+<robot
+    xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+    name="ur5_sim_biotac">
+    
+    <xacro:include filename="$(find sr_description)/other/xacro/materials.urdf.xacro"/>
+    <xacro:include filename="$(find sr_description)/hand/xacro/hand.urdf.xacro"/>
+    <xacro:include filename="$(find sr_description)/other/xacro/gazebo.urdf.xacro"/>
+    <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
+
+    <xacro:ur5_robot prefix="ra_" joint_limited="false"/>
+    <xacro:sr_hand hand_type="$(arg hand_type)" hand_version="$(arg hand_version)" side="$(arg side)"
+                 fingers="$(arg fingers)" tip_sensors="$(arg tip_sensors)" mid_sensors="$(arg mid_sensors)"
+                 prox_sensors="$(arg prox_sensors)" palm_sensor="$(arg palm_sensor)" mounting_plate="$(arg mounting_plate)"/>
 
     <link name="world"/>
 

@@ -19,3 +19,8 @@
 ## References
 - You can download the dataset associated with this network model at https://tams.informatik.uni-hamburg.de/research/datasets/index.php#biotac_single_contact_response
 - If you use this work, please cite *Philipp Ruppel, Yannick Jonetzko, Michael Görner, Norman Hendrich and Jianwei Zhang, Simulation of the SynTouch BioTac Sensor, The 15th International Conference on Intelligent Autonomous Systems, IAS-15 2018, Baden Baden, Germany.*
+
+## update to noetic version
+- command -simulating hand only: roslaunch sim_biotac_motorhand sim_biotac_motorhand_1.launch
+- command -simulating ur5 and hand: roslaunch sim_biotac_motorhand ur5_left_sh_hand.launch
+- command -move fingers rosrun rqt_gui rqt_gui

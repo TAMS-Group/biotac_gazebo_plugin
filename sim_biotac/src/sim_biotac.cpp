@@ -107,11 +107,14 @@ public:
         std::vector<std::vector<Touch>> fingerTouches(fingerLinkNames.size());
 
         for(size_t contactIndex = 0; contactIndex < contactManager->GetContactCount(); contactIndex++) {
+//             ROS_INFO_STREAM("contact detected......");
             auto *contact = contactManager->GetContact(contactIndex);
             for(size_t pointIndex = 0; pointIndex < contact->count; pointIndex++) {
                 for(size_t fingerIndex = 0; fingerIndex < fingerLinkNames.size(); fingerIndex++) {
                     auto &fingerLinkName = fingerLinkNames[fingerIndex];
+//                     ROS_INFO_STREAM("name is " << contact->collision1->GetLink()->GetName()<<" ...and... "<< contact->collision2->GetLink()->GetName());
                     if(fingerLinkName == contact->collision1->GetLink()->GetName() || fingerLinkName == contact->collision2->GetLink()->GetName()) {
+//                         ROS_INFO_STREAM("contact detected in "<<fingerLinkName);
                         Eigen::Vector3d force = Eigen::Vector3d::Zero();
                         if(fingerLinkName == contact->collision1->GetLink()->GetName()) force = toEigen(contact->wrench[pointIndex].body1Force);
                         if(fingerLinkName == contact->collision2->GetLink()->GetName()) force = toEigen(contact->wrench[pointIndex].body2Force);

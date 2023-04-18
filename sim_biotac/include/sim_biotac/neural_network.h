@@ -116,7 +116,7 @@ public:
             YAML::Node yamlLayer = yaml["layers"]["layers"][layerIndex];
             std::string layerType = yamlLayer["class_name"].as<std::string>();
             std::shared_ptr<Layer> layer;
-            ROS_INFO_STREAM("layerCount is "<<layerCount<<" and current layerIndex is "<<layerIndex <<"layer type is "<<layerType);
+//            ROS_INFO_STREAM("layerCount is "<<layerCount<<" and current layerIndex is "<<layerIndex <<"layer type is "<<layerType);
             if(layerType == "InputLayer") {
                 struct Input : Layer {};
                 layer = std::make_shared<Input>();
@@ -217,12 +217,12 @@ public:
                         ROS_INFO("%i %i", (int)r.size(), (int)weights.cols());
                         throw 0;
                     }
-                    ROS_INFO_STREAM("row is "<<r);
+//                    ROS_INFO_STREAM("row is "<<r);
                     weights.row(row) = r;
                 }
                 layerWeights.push_back(weights.transpose());
             }
-            ROS_INFO("weight value is loaded successfully");
+//            ROS_INFO("weight value is loaded successfully");
 
             layer->weights = layerWeights;
             for(size_t i = 0; i < yamlLayer["inbound_nodes"][0].size(); i++) {
@@ -232,16 +232,15 @@ public:
             layerMap[layer->name] = layer;
             layerList.push_back(layer);
         }
-        ROS_INFO("loading data finished.................................");
         for(auto layer : layerList) {
             for(auto n : layer->inputNames) {
                 layer->inputLayers.push_back(layerMap[n]);
             }
         }
         for(auto layer : layerList) {
-            ROS_INFO("%s", layer->name.c_str());
+//            ROS_INFO("%s", layer->name.c_str());
             for(auto n : layer->inputNames) {
-                ROS_INFO("  input %s", n.c_str());
+//                ROS_INFO("  input %s", n.c_str());
             }
         }
         inputLayer = layerMap[yaml["layers"]["input_layers"][0][0].as<std::string>()];

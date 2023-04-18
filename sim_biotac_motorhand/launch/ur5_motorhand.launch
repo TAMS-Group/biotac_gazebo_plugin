@@ -1,28 +1,70 @@
 <?xml version="1.0"?>
 <launch>
     
-    <arg name="hand_id" default="rh"/>
-    <arg name="hand_trajectory" default="true"/>
-    <arg name="hand_serial" default="1322"/>
+    <!--configure parameters-->
+    <arg name="hand_trajectory" default="false"/>
+<!--    <arg name="hand_serial" default="1322"/>-->
 
     <arg name="gui" default="true"/>
-    <arg name="paused" value="true"/>
-
+    <arg name="paused" value="false"/>
     <arg name="debug" default="false"/>
+    <arg name="verbose" default="true"/>
+    
+    <arg name="side" default="right"/>
+    <arg name="side_letter" value="$(eval side[0])"/>
+    <arg name="hand_id" value="$(arg side_letter)h"/>
+    <!-- Whether to run hand controllers. -->
+    <arg name="hand_ctrl" default="true"/>
+    <arg name="hand_type" default="hand_e"/>
+    <arg if="$(eval arg('hand_type') == 'hand_e')" name="hand_version" default="E3M5"/>
+    <arg if="$(eval arg('hand_type') == 'hand_g')" name="hand_version" default="G1M5"/>
+    <arg if="$(eval arg('hand_type') == 'hand_c')" name="hand_version" default="C6M2"/>
+    <arg name="fingers" default="th,ff,mf,rf,lf"/>
+    <arg name="tip_sensors" default="th=bt_2p,ff=bt_2p,mf=bt_2p,rf=bt_2p,lf=bt_2p"/>
+    <arg name="mid_sensors" default="none"/>
+    <arg name="prox_sensors" default="none"/>
+    <arg name="palm_sensor" default="none"/>
+    <!-- Set to true if you want to use grasp controller -->
+    <arg name="grasp_controller" default="false"/>
+    <!-- Set to true if you want to use hybrid controller -->
+    <arg name="hybrid_controller" default="false"/>
+    
+    <!-- Robot description related config-->
+    <arg name="robot_name" default="usrh"/>
+    <arg name="initial_z" default="0.0"/>
+    <arg name="initial_y" default="0.0"/>
+    <arg name="initial_yaw" default="0.0"/>
+    <!-- Set to true if you want the robot to start in the "home" positions -->
+    <arg name="start_home" default="false"/>
+    <!-- Set world value dependant on scene -->
+    <arg name="world" default="$(find sr_description_common)/worlds/shadowhand.world"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro '$(find sim_biotac_motorhand)/robots/ur5_sim_biotac_motorhand.urdf.xacro'"/>
+    <arg name="robot_description" value="'$(find sim_biotac_motorhand)/robots/ur5_sim_biotac_motorhand.urdf.xacro'"/>
+    <arg name="load_robot_description_command" value="$(find xacro)/xacro $(arg robot_description)
+                                hand_type:=$(arg hand_type) hand_version:=$(arg hand_version) side:=$(arg side)
+                                fingers:=$(arg fingers) tip_sensors:=$(arg tip_sensors)
+                                mid_sensors:=$(arg mid_sensors) prox_sensors:=$(arg prox_sensors) palm_sensor:=$(arg palm_sensor)"/>
+
+    <param name="robot_description" command="$(arg load_robot_description_command)"/>
 
     <node name="$(anon sensor_model_loader)" pkg="sim_biotac" type="load_default" output="screen"/>
 
-    <param name="/hand/mapping/$(arg hand_serial)" value="$(arg hand_id)"/>
-    <param name="/hand/joint_prefix/$(arg hand_serial)" value="$(arg hand_id)_"/>
+    <param name="/hand/mapping/0" value="$(arg hand_id)"/>
+    <param name="/hand/joint_prefix/0" value="$(arg hand_id)_"/>
+
+    <param name="/use_sim_time" value="true"/>
+    <env name="GAZEBO_MODEL_PATH" value="$(find sr_description_common)/models/" />
+    <env name="GAZEBO_MODEL_DATABASE_URI" value="" />
+    <env name="MESH_WORKSPACE_PATH" value="$(find sr_description_common)/models/" />
+    <arg if="$(arg start_home)" name="spawn_model_extra_args" value="-unpause $(arg home_angles)" />
+    <arg unless="$(arg start_home)" name="spawn_model_extra_args" value="" />
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" default="$(arg world)"/>
         <arg name="gui" default="$(arg gui)"/>
         <arg name="paused" value="$(arg paused)"/>
-        <arg name="verbose" default="True"/>
         <arg name="debug" value="$(arg debug)"/>
-        <arg name="world_name" value="$(find sim_biotac_motorhand)/worlds/grasp.world"/>
+        <arg name="verbose" value="$(arg verbose)" />
     </include>
 
     <node
@@ -45,17 +87,28 @@
         respawn="false"
         output="screen"/>
 
-    <rosparam file="$(find sr_description)/hand/config/$(arg hand_id)_controller_gazebo.yaml" command="load"/>
+    <group if="$(eval arg('hand_type') == 'hand_e' or arg('hand_type') == 'hand_c')">
+        <rosparam if="$(eval not grasp_controller and not hybrid_controller)" command="load" file="$(find sr_description)/hand/config/$(arg hand_id)_controller_gazebo.yaml"/>
+        <rosparam if="$(arg grasp_controller)" command="load" file="$(find sr_description)/hand/config/$(arg hand_id)_grasp_controller_gazebo.yaml"/>
+        <rosparam if="$(arg hybrid_controller)" command="load" file="$(find sr_description)/hand/config/$(arg hand_id)_hybrid_controller_gazebo.yaml"/>
+    </group>
 
-    <rosparam file="$(find sr_description)/hand/config/$(arg hand_id)_effort_controller_gazebo.yaml" command="load"/>
+    <group if="$(eval arg('hand_type') == 'hand_g')">
+        <rosparam unless="$(arg grasp_controller)" command="load" file="$(find sr_description)/hand/config/$(arg hand_id)_controller_gazebo.yaml"/>
+        <rosparam if="$(arg grasp_controller)" command="load" file="$(find sr_description)/hand/config/$(arg hand_id)_lite_grasp_controller_gazebo.yaml"/>
+    </group>
 
     <rosparam file="$(find sr_robot_launch)/config/gazebo/controller/ra_trajectory_controller.yaml" command="load"/>
 
     <node name="arm_trajectory_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="--shutdown-timeout=1.0 ra_trajectory_controller"/>
 
-    <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch"/>
-    <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher_full_pos">
-        <param name="publish_frequency" type="double" value="20.0"/>
+    <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch" >
+        <arg name="publish_rate" value="125"/>
+    </include>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <param name="publish_frequency" type="double" value="250"/>
+        <param name="tf_prefix" type="string" value="" />
     </node>
 
     <rosparam file="$(find sr_multi_moveit_config)/config/robot_configs/right_sh_ur5.yaml"/>
@@ -71,9 +124,15 @@
 
     <node name="teach_mode_node" pkg="sr_robot_launch" type="teach_mode_node" output="screen"/>
 
-    <node name="rh_trajectory_controller" pkg="sr_utilities" type="trajectory_controller_spawner.py" output="screen">
-        <param name="hand_trajectory" value="$(arg hand_trajectory)"/>
-        <param name="exclude_wrist" value="true"/>
-    </node>
+    <group if="$(arg hand_ctrl)">
+        <arg if="$(arg grasp_controller)" name="hand_controller_group" default="grasp"/>
+        <arg if="$(arg hybrid_controller)" name="hand_controller_group" default="hybrid"/>
+        <arg if="$(eval hand_trajectory and not grasp_controller and not hybrid_controller)" name="hand_controller_group" default="trajectory"/>
+        <arg if="$(eval not hand_trajectory and not grasp_controller and not hybrid_controller)" name="hand_controller_group" default="position"/>
+        <node name="$(arg hand_id)_controller_spawner" pkg="sr_utilities" type="controller_spawner.py" output="screen">
+        <param name="controller_group" value="$(arg hand_controller_group)"/>
+        </node>
+    </group>
 
-</launch>
+</launch>    
+    
